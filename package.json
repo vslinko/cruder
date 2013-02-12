@@ -1,6 +1,6 @@
 {
     "name": "rithis-crud",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Our CRUD implementation for express and mongoose",
     "keywords": ["crud", "express", "mongoose"],
     "author": {
@@ -10,6 +10,6 @@
     "main": "crud",
     "repository": {
         "type": "git",
-        "url": "https://github.com/rithis/node-rithis-crud"
+        "url": "https://github.com/rithis/rithis-crud"
     }
 }
