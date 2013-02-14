@@ -45,9 +45,44 @@ class PostAction
 
         action.bind @
 
+class GetAction
+    constructor: (@model) ->
+    make: ->
+        action = (req, res) ->
+            @model.findOne _id: req.params.id, (err, doc) ->
+                if err
+                    return req.send 500
+
+                unless doc
+                    return req.send 404
+
+                res.send doc
+
+        action.bind @
+
+class PutAction
+    constructor: (@model) ->
+    make: ->
+        action = (req, res) ->
+            data = req.body
+            delete data._id if data._id
+            @model.update { _id: req.params.id }, data, (err) ->
+                if err
+                    return req.send 500
+                
+                res.set "Location", req.url
+                res.send 200
+        
+        action.bind @
 
 module.exports.list = (model) ->
     new ListAction model
 
 module.exports.post = (model) ->
     new PostAction model
+
+module.exports.get = (model) ->
+    new GetAction model
+
+module.exports.put = (model) ->
+    new PutAction model
