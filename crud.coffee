@@ -66,13 +66,19 @@ class PutAction
         action = (req, res) ->
             data = req.body
             delete data._id if data._id
-            @model.update { _id: req.params.id }, data, (err) ->
-                if err
-                    return req.send 500
-                
-                res.set "Location", req.url
-                res.send 200
-        
+            @model.findOne _id: req.params.id, (err, doc) ->
+                return res.send 500 if err
+                return res.send 404 unless doc
+
+                for key, value of data
+                    doc[key] = value
+
+                doc.save (err) ->
+                    return res.send 500 if err
+
+                    res.set "Location", req.url
+                    res.send 200, doc
+
         action.bind @
 
 module.exports.list = (model) ->
