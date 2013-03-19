@@ -81,6 +81,15 @@ class PutAction
 
         action.bind @
 
+class DeleteAction
+    constructor: (@model) ->
+    make: ->
+        action = (req, res) ->
+            @model.remove _id: req.params.id, (err) ->
+                res.send if err then 500 else 200
+
+        action.bind @
+
 module.exports.list = (model) ->
     new ListAction model
 
@@ -92,3 +101,7 @@ module.exports.get = (model) ->
 
 module.exports.put = (model) ->
     new PutAction model
+
+module.exports.delete = (model) ->
+    new DeleteAction model
+
