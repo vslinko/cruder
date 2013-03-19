@@ -3,26 +3,26 @@
 ## Example usage
 
 ```coffeescript
-mongoose = require 'mongoose'
-express = require 'express'
-crud = require 'rithis-crud'
+mongoose = require "mongoose"
+express = require "express"
+crud = require "rithis-crud"
 
 
 DocumentSchema = new mongoose.Schema
-    name: type: 'string', required: true
-    date: type: 'date', required: true
+  name: type: "string", required: true
+  date: type: "date", required: true
 
-Document = db.model 'documents', DocumentSchema
+Document = db.model "documents", DocumentSchema
 
 
-app.get '/documents', crud
-    .list(Document)
-    .sort('-date')
-    .make()
+app.get "/documents", crud
+  .list(Document)
+  .sort("-date")
+  .make()
 
-app.post '/documents', crud
-    .post(Document)
-    .make()
+app.post "/documents", crud
+  .post(Document)
+  .make()
 
 
 app.listen 3000
