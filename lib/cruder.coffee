@@ -1,35 +1,32 @@
-assert = require "assert"
-
-
-crud = (app, Model, options) ->
+cruder = (app, Model, options) ->
   options.actions ||= ["list", "post", "get", "put", "delete"]
   options.modelName ||= Model.modelName
   options.query ||= Model.find()
 
   if "list" in options.actions
-    app.get "/#{options.modelName}", crud.list options.query
+    app.get "/#{options.modelName}", cruder.list options.query
 
   if "post" in options.actions
-    app.post "/#{options.modelName}", crud.post Model
+    app.post "/#{options.modelName}", cruder.post Model
 
   if "get" in options.actions
-    app.get "/#{options.modelName}/:id", crud.get Model
+    app.get "/#{options.modelName}/:id", cruder.get Model
 
   if "put" in options.actions
-    app.put "/#{options.modelName}/:id", crud.put Model
+    app.put "/#{options.modelName}/:id", cruder.put Model
 
   if "delete" in options.actions
-    app.delete "/#{options.modelName}/:id", crud.delete Model
+    app.delete "/#{options.modelName}/:id", cruder.delete Model
 
 
-crud.list = (query) ->
+cruder.list = (query) ->
   (req, res) ->
     query.exec (err, docs) ->
       return res.send 500 if err
       res.send docs
 
 
-crud.post = (Model) ->
+cruder.post = (Model) ->
   (req, res) ->
     doc = new Model req.body
 
@@ -39,7 +36,7 @@ crud.post = (Model) ->
       res.send 201, doc
 
 
-crud.get = (Model) ->
+cruder.get = (Model) ->
   (req, res) ->
     Model.findOne _id: req.params.id, (err, doc) ->
       return req.send 500 if err
@@ -47,7 +44,7 @@ crud.get = (Model) ->
       res.send doc
 
 
-crud.put = (Model) ->
+cruder.put = (Model) ->
   (req, res) ->
     data = req.body
     delete data._id if data._id
@@ -66,11 +63,11 @@ crud.put = (Model) ->
         res.send 200, doc
 
 
-crud.delete = (Model) ->
+cruder.delete = (Model) ->
   (req, res) ->
     Model.remove _id: req.params.id, (err) ->
       return res.send 500 if err
       res.send 200
 
 
-module.exports = crud
+module.exports = cruder

@@ -1,29 +1,30 @@
-# Our CRUD implementation for express and mongoose
+# CRUD for express and mongoose
 
-## Example usage
+## Usage
 
 ```coffeescript
 mongoose = require "mongoose"
 express = require "express"
-crud = require "rithis-crud"
+cruder = require "cruder"
 
+db = mongoose.createConnection "mongodb://localhost/test"
 
-DocumentSchema = new mongoose.Schema
-  name: type: "string", required: true
-  date: type: "date", required: true
+UserSchema = new mongoose.Schema
+  username: type: String, required: true
+  password: type: String, required: true
 
-Document = db.model "documents", DocumentSchema
+User = db.model "users", UserSchema
 
+app = express()
+app.use express.bodyParser()
 
-app.get "/documents", crud
-  .list(Document)
-  .sort("-date")
-  .make()
+# Generate all CRUD actions for model User. That equals:
+#   app.get "/users", cruder.list User.find().sort(username: 1)
+#   app.post "/users", cruder.post User
+#   app.get "/users/:id", cruder.get User
+#   app.put "/users/:id", cruder.put User
+#   app.delete "/users/:id", cruder.delete User
+cruder app, User, query: User.find().sort(username: 1)
 
-app.post "/documents", crud
-  .post(Document)
-  .make()
-
-
-app.listen 3000
+app.listen 3000 if require.main is module
 ```

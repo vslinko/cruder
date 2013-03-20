@@ -1,16 +1,16 @@
 {
-  "name": "rithis-crud"
-, "version": "0.0.5"
-, "description": "Our CRUD implementation for express and mongoose"
+  "name": "cruder"
+, "version": "0.1.0"
+, "description": "CRUD for express and mongoose"
 , "keywords": ["crud", "express", "mongoose"],
   "author": {
     "name": "Vyacheslav Slinko"
   , "email": "vyacheslav.slinko@gmail.com"
   }
-, "main": "crud"
+, "main": "lib/cruder"
 , "repository": {
     "type": "git"
-  , "url": "https://github.com/rithis/rithis-crud"
+  , "url": "https://github.com/rithis/cruder"
   }
 , "scripts": {
     "test": "./node_modules/.bin/grunt test"
@@ -20,8 +20,6 @@
   , "mongoose": "~3.6"
   , "supertest": "~0.5"
   , "chai": "~1.5"
-  , "sinon": "~1.6"
-  , "sinon-chai": "~2.3"
   , "grunt": "~0.4"
   , "grunt-cli": "~0.1"
   , "grunt-coffeelint": "~0.0"

@@ -1,6 +1,6 @@
 mongoose = require "mongoose"
 express = require "express"
-crud = require "../../crud"
+cruder = require "../../lib/cruder"
 
 
 module.exports.app = app = express()
@@ -21,6 +21,6 @@ db.on "connected", ->
         db.emit "fixtured"
 
 app.use express.bodyParser()
-crud app, User, query: User.find().sort(username: 1)
+cruder app, User, query: User.find().sort(username: 1)
 
 app.listen 3000 if require.main is module
