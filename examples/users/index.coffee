@@ -21,10 +21,10 @@ db.on "connected", ->
         db.emit "fixtured"
 
 app.use express.bodyParser()
-app.get "/users", crud.list(User.find().sort(username: 1)).make()
-app.post "/users", crud.post(User).make()
-app.get "/users/:id", crud.get(User).make()
-app.put "/users/:id", crud.put(User).make()
-app.delete "/users/:id", crud.delete(User).make()
+app.get "/users", crud.list User.find().sort(username: 1)
+app.post "/users", crud.post User
+app.get "/users/:id", crud.get User
+app.put "/users/:id", crud.put User
+app.delete "/users/:id", crud.delete User
 
 app.listen 3000 if require.main is module
