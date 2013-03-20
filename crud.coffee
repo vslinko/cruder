@@ -1,11 +1,35 @@
-module.exports.list = (query) ->
+assert = require "assert"
+
+
+crud = (app, Model, options) ->
+  options.actions ||= ["list", "post", "get", "put", "delete"]
+  options.modelName ||= Model.modelName
+  options.query ||= Model.find()
+
+  if "list" in options.actions
+    app.get "/#{options.modelName}", crud.list options.query
+
+  if "post" in options.actions
+    app.post "/#{options.modelName}", crud.post Model
+
+  if "get" in options.actions
+    app.get "/#{options.modelName}/:id", crud.get Model
+
+  if "put" in options.actions
+    app.put "/#{options.modelName}/:id", crud.put Model
+
+  if "delete" in options.actions
+    app.delete "/#{options.modelName}/:id", crud.delete Model
+
+
+crud.list = (query) ->
   (req, res) ->
     query.exec (err, docs) ->
       return res.send 500 if err
       res.send docs
 
 
-module.exports.post = (Model) ->
+crud.post = (Model) ->
   (req, res) ->
     doc = new Model req.body
 
@@ -15,7 +39,7 @@ module.exports.post = (Model) ->
       res.send 201, doc
 
 
-module.exports.get = (Model) ->
+crud.get = (Model) ->
   (req, res) ->
     Model.findOne _id: req.params.id, (err, doc) ->
       return req.send 500 if err
@@ -23,7 +47,7 @@ module.exports.get = (Model) ->
       res.send doc
 
 
-module.exports.put = (Model) ->
+crud.put = (Model) ->
   (req, res) ->
     data = req.body
     delete data._id if data._id
@@ -42,8 +66,11 @@ module.exports.put = (Model) ->
         res.send 200, doc
 
 
-module.exports.delete = (Model) ->
+crud.delete = (Model) ->
   (req, res) ->
     Model.remove _id: req.params.id, (err) ->
       return res.send 500 if err
       res.send 200
+
+
+module.exports = crud
