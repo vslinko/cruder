@@ -33,7 +33,7 @@ class PostAction
       doc.save (err) ->
         return res.send 400, err if err?.name is "ValidationError"
         return res.send 500 if err
-        res.send doc
+        res.send 201, doc
 
 
 class GetAction
@@ -75,6 +75,8 @@ class DeleteAction
         return res.send 500 if err
         res.send 200
 
+
+module.exports.ListAction = ListAction
 
 module.exports.list = (model) ->
   new ListAction model
