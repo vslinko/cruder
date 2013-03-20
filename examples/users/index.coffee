@@ -21,7 +21,7 @@ db.on "connected", ->
         db.emit "fixtured"
 
 app.use express.bodyParser()
-app.get "/users", crud.list(User).sort(username: 1).make()
+app.get "/users", crud.list(User.find().sort(username: 1)).make()
 app.post "/users", crud.post(User).make()
 app.get "/users/:id", crud.get(User).make()
 app.put "/users/:id", crud.put(User).make()

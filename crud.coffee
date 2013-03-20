@@ -1,22 +1,5 @@
-queryMethods = [
-  "where", "equals", "or", "nor", "and", "gt", "gte", "lt", "lte", "ne", "in",
-  "nin", "all", "size", "regex", "maxDistance", "near", "nearSphere", "mod",
-  "exists", "elemMatch", "box", "center", "centerSphere", "polygon", "select",
-  "slice", "sort", "limit", "skip", "maxscan", "batchSize", "comment",
-  "snapshot", "hint", "slaveOk", "read", "lean", "tailable", "count",
-  "distinct"
-]
-
-
 class ListAction
-  constructor: (model) ->
-    @query = model.find()
-
-    queryMethods.forEach (method) =>
-      @[method] = ->
-        @query[method].apply @query, arguments
-        @
-
+  constructor: (@query) ->
   make: ->
     (req, res) =>
       @query.exec (err, docs) ->

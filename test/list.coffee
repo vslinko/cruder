@@ -8,7 +8,7 @@ describe "ListAction", ->
   chai.use require "sinon-chai"
 
   describe "#constructor()", ->
-    it "should define methods for query chaining", ->
+    it.skip "should define methods for query chaining", ->
       model = find: sinon.stub()
       listAction = new crud.ListAction model
       model.find.should.have.been.calledOnce
