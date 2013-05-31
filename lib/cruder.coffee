@@ -21,6 +21,7 @@ cruder = (app, Model, options) ->
 
 cruder.list = (query) ->
   (req, res) ->
+    query.find req.query
     query.exec (err, docs) ->
       return res.send 500 if err
       res.send docs
