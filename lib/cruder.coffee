@@ -7,7 +7,7 @@ merge = (dest, source) ->
 
 
 module.exports = (app) ->
-  (Model, options) ->
+  (Model, options = {}) ->
     options.actions ||= ["list", "post", "get", "put", "delete"]
     options.name ||= Model.modelName
 
