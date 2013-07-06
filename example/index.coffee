@@ -3,7 +3,6 @@ mongoose = require "mongoose"
 express = require "express"
 nodefn = require "when/node/function"
 cruder = require ".."
-w = require "when"
 
 
 # db
@@ -15,10 +14,16 @@ UserSchema = new mongoose.Schema
 
 User = db.model "users", UserSchema
 
+
 # app
 app = express()
 app.use express.bodyParser()
-cruder app, User, query: User.find().sort(username: 1)
+
+
+# cruder
+resource = cruder app
+resource User, list: query: -> User.find().sort(username: 1)
+
 
 # setup
 zombie = new User username: "Zombie", password: "Attack"
