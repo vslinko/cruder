@@ -2,7 +2,7 @@
 
 ## Usage
 
-```coffeescript
+```coffee
 mongoose = require "mongoose"
 express = require "express"
 cruder = require "cruder"

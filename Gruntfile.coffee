@@ -1,18 +1,18 @@
 module.exports = (grunt) ->
   grunt.initConfig
     simplemocha:
-      acceptance:
-        src: "test/acceptance/*.coffee"
-        options: reporter: process.env.REPORTER or "spec"
-      options: ignoreLeaks: true
+      example: "test/example.coffee"
+      options: reporter: process.env.REPORTER or "spec"
     coffeelint:
-      lib: "crud.coffee"
+      example: "example/**/*.coffee"
+      lib: "lib/**/*.coffee"
       test: "test/**/*.coffee"
       grunt: "Gruntfile.coffee"
 
-  grunt.registerTask "default", ["test", "lint"]
-  grunt.registerTask "test", ["simplemocha:acceptance"]
-  grunt.registerTask "lint", "coffeelint"
-
   grunt.loadNpmTasks "grunt-simple-mocha"
   grunt.loadNpmTasks "grunt-coffeelint"
+
+  grunt.registerTask "default", [
+    "simplemocha"
+    "coffeelint"
+  ]
