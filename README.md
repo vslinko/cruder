@@ -2,6 +2,8 @@
 
 > CRUD for express and mongoose.
 
+[![Build Status](https://travis-ci.org/rithis/cruder.png?branch=master)](https://travis-ci.org/rithis/cruder) [![Dependency Status](https://gemnasium.com/rithis/cruder.png)](https://gemnasium.com/rithis/cruder)
+
 ## Usage
 
 ```coffee
