@@ -2,7 +2,10 @@
 
 > CRUD for express and mongoose.
 
-[![Build Status](https://travis-ci.org/rithis/cruder.png?branch=master)](https://travis-ci.org/rithis/cruder) [![Dependency Status](https://gemnasium.com/rithis/cruder.png)](https://gemnasium.com/rithis/cruder) [![NPM version](https://badge.fury.io/js/cruder.png)](http://badge.fury.io/js/cruder)
+[![Build Status](https://travis-ci.org/rithis/cruder.png?branch=master)](https://travis-ci.org/rithis/cruder)
+[![Coverage Status](https://coveralls.io/repos/rithis/cruder/badge.png?branch=master)](https://coveralls.io/r/rithis/cruder?branch=master)
+[![Dependency Status](https://gemnasium.com/rithis/cruder.png)](https://gemnasium.com/rithis/cruder)
+[![NPM version](https://badge.fury.io/js/cruder.png)](http://badge.fury.io/js/cruder)
 
 ## Usage
 
