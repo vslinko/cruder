@@ -11,6 +11,7 @@ describe "users", ->
   id = null
 
   before (callback) ->
+    @timeout 0
     promise = require "../example"
 
     promise.then (app) ->
