@@ -8,10 +8,12 @@ merge = (dest, source) ->
 
 module.exports = (app) ->
   (Model, options = {}) ->
-    options.actions ||= ["list", "post", "get", "put", "delete"]
     options.name ||= Model.modelName
+    options.collection ||= {}
+    options.document ||= {}
 
-    options.list = merge
+    options.collection.get = merge
+      enabled: true
       method: "get"
       url: "/#{options.name}"
       middlewares: []
@@ -20,9 +22,10 @@ module.exports = (app) ->
       beforeSending: (req, res, docs) ->
         docs
       afterSending: (req, res) ->
-    , options.list
+    , options.collection.get
 
-    options.post = merge
+    options.collection.post = merge
+      enabled: true
       method: "post"
       url: "/#{options.name}"
       middlewares: []
@@ -32,9 +35,10 @@ module.exports = (app) ->
         res.set "Location", "/#{Model.modelName}/#{doc._id}"
         doc
       afterSending: (req, res) ->
-    , options.post
+    , options.collection.post
 
-    options.get = merge
+    options.document.get = merge
+      enabled: true
       method: "get"
       url: "/#{options.name}/:id"
       middlewares: []
@@ -43,9 +47,10 @@ module.exports = (app) ->
       beforeSending: (req, res, doc) ->
         doc
       afterSending: (req, res) ->
-    , options.get
+    , options.document.get
 
-    options.put = merge
+    options.document.put = merge
+      enabled: true
       method: "put"
       url: "/#{options.name}/:id"
       middlewares: []
@@ -58,9 +63,10 @@ module.exports = (app) ->
       beforeSending: (req, res, doc) ->
         doc
       afterSending: (req, res) ->
-    , options.put
+    , options.document.put
 
-    options.delete = merge
+    options.document.delete = merge
+      enabled: true
       method: "delete"
       url: "/#{options.name}/:id"
       middlewares: []
@@ -68,67 +74,74 @@ module.exports = (app) ->
         Model.remove _id: req.params.id
       beforeSending: (req, res) ->
       afterSending: (req, res) ->
-    , options.delete
+    , options.document.delete
 
-    for action in options.actions
-      opts = options[action]
-      args = []
+    for context in ["collection", "document"]
+      for action, opts of options[context]
+        args = []
 
-      args.push opts.url
-      args.concat opts.middlewares
-      args.push actions[action] opts
+        args.push opts.url
+        args.concat opts.middlewares
+        args.push actions[context][action] opts
 
-      app[opts.method].apply app, args
+        app[opts.method].apply app, args
 
 
 actions =
-  list: (options) ->
-    (req, res) ->
-      query = options.query req, res
-      query.exec (err, docs) ->
-        return res.send 500 if err
-        docs = options.beforeSending req, res, docs
-        res.send docs
-        options.afterSending req, res, docs
-
-  post: (options) ->
-    (req, res) ->
-      doc = options.doc req, res
-      doc.save (err) ->
-        return res.send 400, err if err?.name is "ValidationError"
-        return res.send 500 if err
-        doc = options.beforeSending req, res, doc
-        res.send 201, doc
-        options.afterSending req, res, doc
-
-  get: (options) ->
-    (req, res) ->
-      query = options.query req, res
-      query.exec (err, doc) ->
-        return req.send 500 if err
-        return req.send 404 unless doc
-        doc = options.beforeSending req, res, doc
-        res.send 200, doc
-        options.afterSending req, res, doc
-
-  put: (options) ->
-    (req, res) ->
-      query = options.query req, res
-      query.exec (err, doc) ->
-        return res.send 500 if err
-        return res.send 404 unless doc
-        doc = options.beforeSaving req, res, doc
-        doc.save (err) ->
+  collection:
+    get: (options) ->
+      (req, res) ->
+        return res.send 405 unless options.enabled
+        query = options.query req, res
+        query.exec (err, docs) ->
           return res.send 500 if err
+          docs = options.beforeSending req, res, docs
+          res.send docs
+          options.afterSending req, res, docs
+
+    post: (options) ->
+      (req, res) ->
+        return res.send 405 unless options.enabled
+        doc = options.doc req, res
+        doc.save (err) ->
+          return res.send 400, err if err?.name is "ValidationError"
+          return res.send 500 if err
+          doc = options.beforeSending req, res, doc
+          res.send 201, doc
+          options.afterSending req, res, doc
+
+  document:
+    get: (options) ->
+      (req, res) ->
+        return res.send 405 unless options.enabled
+        query = options.query req, res
+        query.exec (err, doc) ->
+          return req.send 500 if err
+          return req.send 404 unless doc
           doc = options.beforeSending req, res, doc
           res.send 200, doc
           options.afterSending req, res, doc
 
-  delete: (options) ->
-    (req, res) ->
-      query = options.query req, res
-      query.exec (err) ->
-        return res.send 500 if err
-        options.beforeSending req, res
-        res.send 200
-        options.afterSending req, res
+    put: (options) ->
+      (req, res) ->
+        return res.send 405 unless options.enabled
+        query = options.query req, res
+        query.exec (err, doc) ->
+          return res.send 500 if err
+          return res.send 404 unless doc
+          doc = options.beforeSaving req, res, doc
+          doc.save (err) ->
+            return res.send 500 if err
+            doc = options.beforeSending req, res, doc
+            res.send 200, doc
+            options.afterSending req, res, doc
+
+    delete: (options) ->
+      (req, res) ->
+        return res.send 405 unless options.enabled
+        query = options.query req, res
+        query.exec (err) ->
+          return res.send 500 if err
+          options.beforeSending req, res
+          res.send 200
+          options.afterSending req, res

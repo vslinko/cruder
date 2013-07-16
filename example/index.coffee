@@ -24,9 +24,14 @@ app.use express.bodyParser()
 resource = cruder app
 resource User
 resource User,
-  actions: ["list"]
   name: "sorted-users"
-  list: query: -> User.find().sort(username: 1)
+  collection:
+    get: query: -> User.find().sort(username: 1)
+    post: enabled: false
+  document:
+    get: enabled: false
+    put: enabled: false
+    delete: enabled: false
 
 
 # setup
