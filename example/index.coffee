@@ -23,16 +23,12 @@ app.use express.bodyParser()
 # cruder
 resource = cruder app
 resource User
-resource User,
-  baseUrl: "/sorted-users"
-  collection:
-    get: query: -> User.find().sort(username: 1)
-    post: enabled: false
-  document:
-    get: enabled: false
-    put: enabled: false
-    delete: enabled: false
 
+sortedUsersResource = resource User,
+  baseUrl: "/sorted-users"
+  collection: get: query: User.find().sort(username: 1)
+sortedUsersResource.disable()
+sortedUsersResource.enable("get", "collection")
 
 # setup
 zombie = new User username: "Zombie", password: "Attack"

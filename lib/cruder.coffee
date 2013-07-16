@@ -1,191 +1,264 @@
-merge = (dest, source) ->
-  if typeof source is "object"
-    for key, value of source
-      if source.hasOwnProperty key
-        dest[key] = value
-  dest
+CONTEXTS = ["collection", "document"]
+METHODS = ["get", "post", "put", "delete"]
 
 
-module.exports = (app) ->
-  (Model, options = {}) ->
+class Resource
+  constructor: (app, Model, options = {}) ->
     options.baseUrl ||= Model.modelName
-    options.collection ||= {}
-    options.document ||= {}
 
     options.baseUrl = options.baseUrl.replace /\/*$/, ""
     options.baseUrl = options.baseUrl.replace /^\/*/, "/"
 
-    urls =
-      collection: options.baseUrl
-      document: options.baseUrl + "/:id"
+    collectionUrl = options.baseUrl
+    documentUrl = options.baseUrl + "/:id"
 
-    options.collection.get = merge
-      enabled: true
-      middlewares: []
-      query: (req, res) ->
-        Model.find()
-      beforeSending: (req, res, docs) ->
-        docs
-      afterSending: (req, res) ->
-    , options.collection.get
+    @collection =
+      get: new CollectionGetController Model, collectionUrl
+      post: new CollectionPostController Model, collectionUrl
+      put: new CollectionPutController Model, collectionUrl
+      delete: new CollectionDeleteController Model, collectionUrl
 
-    options.collection.post = merge
-      enabled: true
-      middlewares: []
-      doc: (req, res) ->
-        new Model req.body
-      beforeSending: (req, res, doc) ->
-        res.set "Location", "/#{Model.modelName}/#{doc._id}"
-        doc
-      afterSending: (req, res) ->
-    , options.collection.post
+    @document =
+      get: new DocumentGetController Model, documentUrl
+      post: new DocumentPostController Model, documentUrl
+      put: new DocumentPutController Model, documentUrl
+      delete: new DocumentDeleteController Model, documentUrl
 
-    options.collection.put = merge
-      enabled: true
-      middlewares: []
-      beforeSending: (req, res) ->
-      afterSending: (req, res) ->
-    , options.collection.put
+    for context in CONTEXTS
+      for method in METHODS
+        controller = @[context][method]
 
-    options.collection.delete = merge
-      enabled: true
-      middlewares: []
-      query: (req, res) ->
-        Model.remove()
-      beforeSending: (req, res) ->
-      afterSending: (req, res) ->
-    , options.collection.delete
+        if options[context]?[method]
+          for key, value of options[context]?[method]
+            controller[key] = value
 
-    options.document.get = merge
-      enabled: true
-      middlewares: []
-      query: (req, res) ->
-        Model.findOne _id: req.params.id
-      beforeSending: (req, res, doc) ->
-        doc
-      afterSending: (req, res) ->
-    , options.document.get
+  register: (app, methods, contexts) ->
+    @_do methods, contexts, (controller) ->
+      controller.register app
 
-    options.document.post = merge
-      enabled: true
-      middlewares: []
-      beforeSending: (req, res) ->
-      afterSending: (req, res) ->
-    , options.document.post
+  disable: (methods, contexts) ->
+    @_do methods, contexts, (controller) ->
+      controller.disable()
 
-    options.document.put = merge
-      enabled: true
-      middlewares: []
-      query: (req, res) ->
-        Model.findOne _id: req.params.id
-      beforeSaving: (req, res, doc) ->
-        data = req.body
-        delete data._id
-        merge doc, data
-      beforeSending: (req, res, doc) ->
-        doc
-      afterSending: (req, res) ->
-    , options.document.put
+  enable: (methods, contexts) ->
+    @_do methods, contexts, (controller) ->
+      controller.enable()
 
-    options.document.delete = merge
-      enabled: true
-      middlewares: []
-      query: (req, res) ->
-        Model.remove _id: req.params.id
-      beforeSending: (req, res) ->
-      afterSending: (req, res) ->
-    , options.document.delete
+  _do: (methods = METHODS, contexts = CONTEXTS, action) ->
+    contexts = [contexts] unless Array.isArray contexts
+    methods = [methods] unless Array.isArray methods
+
+    for context in contexts
+      for method in methods
+        action @[context][method]
 
 
-    for context in ["collection", "document"]
-      for method in ["get", "post", "put", "delete"]
-        opts = options[context][method]
-        args = []
+class Controller
+  constructor: (@Model, @url) ->
+    @disabled = false
 
-        args.push urls[context]
-        args.concat opts.middlewares
-        args.push actions[context][method] opts
+  disable: ->
+    @disabled = true
 
-        app[method].apply app, args
+  enable: ->
+    @disabled = false
+
+  register: (app) ->
+    app[@method].call app, @url, @controller.bind @
+
+  _beforeSending: ->
+    if typeof @beforeSending is "function"
+      @beforeSending.apply @, arguments
+    else
+      Array::pop.call arguments
+
+  _afterSending: ->
+    if typeof @afterSending is "function"
+      @afterSending.apply @, arguments
 
 
-actions =
-  collection:
-    get: (options) ->
-      (req, res) ->
-        return res.send 405 unless options.enabled
-        query = options.query req, res
-        query.exec (err, docs) ->
-          return res.send 500 if err
-          docs = options.beforeSending req, res, docs
-          res.send docs
-          options.afterSending req, res, docs
+class DisabledController extends Controller
+  controller: (req, res) ->
+    @_beforeSending req, res
+    res.send 405
+    @_afterSending req, res
 
-    post: (options) ->
-      (req, res) ->
-        return res.send 405 unless options.enabled
-        doc = options.doc req, res
-        doc.save (err) ->
-          return res.send 400, err if err?.name is "ValidationError"
-          return res.send 500 if err
-          doc = options.beforeSending req, res, doc
-          res.send 201, doc
-          options.afterSending req, res, doc
 
-    put: (options) ->
-      (req, res) ->
-        options.beforeSending req, res
-        res.send 405
-        options.afterSending req, res
+class QueryController extends Controller
+  _query: (req, res) ->
+    if typeof @query is "function"
+      @query req, res
+    else
+      @query
 
-    delete: (options) ->
-      (req, res) ->
-        return res.send 405 unless options.enabled
-        query = options.query req, res
-        query.exec (err) ->
-          return res.send 500 if err
-          options.beforeSending req, res
-          res.send 200
-          options.afterSending req, res
 
-  document:
-    get: (options) ->
-      (req, res) ->
-        return res.send 405 unless options.enabled
-        query = options.query req, res
-        query.exec (err, doc) ->
-          return req.send 500 if err
-          return req.send 404 unless doc
-          doc = options.beforeSending req, res, doc
-          res.send 200, doc
-          options.afterSending req, res, doc
+class CollectionGetController extends QueryController
+  constructor: ->
+    super
+    @method = "get"
+    @query = @Model.find()
 
-    post: (options) ->
-      (req, res) ->
-        options.beforeSending req, res
-        res.send 405
-        options.afterSending req, res
+  controller: (req, res) ->
+    return res.send 405 if @disabled
 
-    put: (options) ->
-      (req, res) ->
-        return res.send 405 unless options.enabled
-        query = options.query req, res
-        query.exec (err, doc) ->
-          return res.send 500 if err
-          return res.send 404 unless doc
-          doc = options.beforeSaving req, res, doc
-          doc.save (err) ->
-            return res.send 500 if err
-            doc = options.beforeSending req, res, doc
-            res.send 200, doc
-            options.afterSending req, res, doc
+    query = @_query req, res
 
-    delete: (options) ->
-      (req, res) ->
-        return res.send 405 unless options.enabled
-        query = options.query req, res
-        query.exec (err) ->
-          return res.send 500 if err
-          options.beforeSending req, res
-          res.send 200
-          options.afterSending req, res
+    query.exec (err, docs) =>
+      return res.send 500 if err
+
+      docs = @_beforeSending req, res, docs
+      res.send docs
+      @_afterSending req, res, docs
+
+
+class CollectionPostController extends Controller
+  constructor: ->
+    super
+    @method = "post"
+
+  factory: (req, res) ->
+    new @Model req.body
+
+  controller: (req, res) ->
+    return res.send 405 if @disabled
+
+    doc = @factory req, res
+
+    doc.save (err) =>
+      if err
+        return res.send 400, err if err.name is "ValidationError"
+        return res.send 500
+
+      res.set "Location", @url.replace ":id", doc._id
+
+      doc = @_beforeSending req, res, doc
+      res.send 201, doc
+      @_afterSending req, res, doc
+
+
+class CollectionPutController extends DisabledController
+  constructor: ->
+    super
+    @method = "put"
+
+
+class CollectionDeleteController extends QueryController
+  constructor: ->
+    super
+    @method = "delete"
+    @query = @Model.remove()
+
+  controller: (req, res) ->
+    return res.send 405 if @disabled
+
+    query = @_query req, res
+
+    query.exec (err) =>
+      return res.send 500 if err
+
+      @_beforeSending req, res
+      res.send 200
+      @_afterSending req, res
+
+
+class DocumentGetController extends QueryController
+  constructor: ->
+    super
+    @method = "get"
+
+  query: (req, res) ->
+    @Model.findOne _id: req.params.id
+
+  controller: (req, res) ->
+    return res.send 405 if @disabled
+
+    query = @_query req, res
+
+    query.exec (err, doc) =>
+      return req.send 500 if err
+      return req.send 404 unless doc
+
+      doc = @_beforeSending req, res, doc
+      res.send 200, doc
+      @_afterSending req, res, doc
+
+
+class DocumentPostController extends DisabledController
+  constructor: ->
+    super
+    @method = "post"
+
+
+class DocumentPutController extends QueryController
+  constructor: ->
+    super
+    @method = "put"
+
+  query: (req, res) ->
+    @Model.findOne _id: req.params.id
+
+  beforeSaving: (req, res, doc) ->
+    data = req.body
+    delete data._id
+    doc[key] = value for key, value of data
+    doc
+
+  controller: (req, res) ->
+    return res.send 405 if @disabled
+
+    query = @_query req, res
+
+    query.exec (err, doc) =>
+      return res.send 500 if err
+      return res.send 404 unless doc
+
+      doc = @beforeSaving req, res, doc
+
+      doc.save (err) =>
+        return res.send 500 if err
+
+        doc = @_beforeSending req, res, doc
+        res.send 200, doc
+        @_afterSending req, res, doc
+
+
+class DocumentDeleteController extends QueryController
+  constructor: ->
+    super
+    @method = "delete"
+
+  query: (req, res) ->
+    @Model.remove _id: req.params.id
+
+  controller: (req, res) ->
+    return res.send 405 if @disabled
+
+    query = @_query req, res
+
+    query.exec (err) =>
+      return res.send 500 if err
+
+      @_beforeSending req, res
+      res.send 200
+      @_afterSending req, res
+
+
+module.exports = (app) ->
+  (Model, options) ->
+    resource = new Resource app, Model, options
+    resource.register app
+    resource
+
+
+module.exports.Resource = Resource
+module.exports.Controller = Controller
+module.exports.DisabledController = DisabledController
+module.exports.QueryController = QueryController
+module.exports.CollectionGetController = CollectionGetController
+module.exports.CollectionPostController = CollectionPostController
+module.exports.CollectionPutController = CollectionPutController
+module.exports.CollectionDeleteController = CollectionDeleteController
+module.exports.DocumentGetController = DocumentGetController
+module.exports.DocumentPostController = DocumentPostController
+module.exports.DocumentPutController = DocumentPutController
+module.exports.DocumentDeleteController = DocumentDeleteController
