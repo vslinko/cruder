@@ -1,3 +1,3 @@
-module.exports = class AcceptHeaderFactory
-  factory: ->
-    "application/json"
+module.exports = class AcceptHeader
+  set: (res) ->
+    res.set "Accept", "application/json"

@@ -1,5 +1,6 @@
-AcceptHeaderFactory = require "./headers/accept"
-AllowHeaderFactory = require "./headers/allow"
+AcceptHeader = require "./headers/accept"
+AllowHeader = require "./headers/allow"
+LastModified = require "./headers/last_modified"
 events = require "events"
 
 
@@ -50,7 +51,11 @@ module.exports = class Resource extends events.EventEmitter
             @emit "#{method}:#{event}", req, res, data
             @emit "#{event}", req, res, data
 
-    @_attachHeaders()
+    @_attachAcceptHeader()
+    @_attachAllowHeader()
+
+    if options.modificationTimeField
+      @_attachLastModifiedHeader options.modificationTimeField
 
   register: (app, methods, contexts) ->
     @_do methods, contexts, (controller) ->
@@ -72,19 +77,15 @@ module.exports = class Resource extends events.EventEmitter
       for method in methods
         action @[context][method]
 
-  _attachHeaders: ->
-    @_attachAcceptHeader()
-    @_attachAllowHeader()
-
   _attachAcceptHeader: ->
-    accept = new AcceptHeaderFactory
+    accept = new AcceptHeader
 
     @on "beforeSending", (req, res) ->
-      res.set "Accept", accept.factory()
+      accept.set res
 
   _attachAllowHeader: ->
     CONTEXTS.forEach (context) =>
-      allow = new AllowHeaderFactory [
+      allow = new AllowHeader [
         @[context].get
         @[context].post
         @[context].put
@@ -92,4 +93,10 @@ module.exports = class Resource extends events.EventEmitter
       ]
 
       @on "#{context}:beforeSending", (req, res) ->
-        res.set "Allow", allow.factory()
+        allow.set res
+
+  _attachLastModifiedHeader: (field) ->
+    lastModified = new LastModified field
+
+    @on "document:beforeSending", (req, res, doc) ->
+      lastModified.set res, doc
