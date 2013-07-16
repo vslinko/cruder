@@ -30,12 +30,12 @@ app.use express.bodyParser()
 resource = cruder app
 resource User, modificationTimeField: "updatedAt"
 
-sortedUsersResource = resource User,
+resource User,
   baseUrl: "/sorted-users"
   modificationTimeField: "updatedAt"
   collection: get: query: User.find().sort(username: 1)
-sortedUsersResource.disable()
-sortedUsersResource.enable("get", "collection")
+.disable()
+.enable("get", "collection")
 
 
 # setup

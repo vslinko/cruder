@@ -7,3 +7,4 @@ module.exports = class DisabledController extends Controller
     @_disabled = true
 
   enable: ->
+    @

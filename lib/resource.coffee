@@ -60,14 +60,17 @@ module.exports = class Resource extends events.EventEmitter
   register: (app, methods, contexts) ->
     @_do methods, contexts, (controller) ->
       controller.register app
+    @
 
   disable: (methods, contexts) ->
     @_do methods, contexts, (controller) ->
       controller.disable()
+    @
 
   enable: (methods, contexts) ->
     @_do methods, contexts, (controller) ->
       controller.enable()
+    @
 
   _do: (methods = METHODS, contexts = CONTEXTS, action) ->
     contexts = [contexts] unless Array.isArray contexts

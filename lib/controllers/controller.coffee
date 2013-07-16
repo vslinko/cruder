@@ -7,12 +7,15 @@ module.exports = class Controller extends events.EventEmitter
 
   disable: ->
     @_disabled = true
+    @
 
   enable: ->
     @_disabled = false
+    @
 
   disabled: ->
     @_disabled
+    @
 
   enabled: ->
     not @_disabled
@@ -20,6 +23,7 @@ module.exports = class Controller extends events.EventEmitter
   register: (app) ->
     app[@method] @url, (req, res) =>
       @controller req, res
+    @
 
   controller: (req, res) ->
     return res.send 405 if @_disabled
