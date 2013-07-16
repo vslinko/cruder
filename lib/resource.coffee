@@ -1,3 +1,4 @@
+AcceptHeaderFactory = require "./headers/accept"
 AllowHeaderFactory = require "./headers/allow"
 events = require "events"
 
@@ -47,8 +48,9 @@ module.exports = class Resource extends events.EventEmitter
             @emit "#{method}:#{context}:#{event}", req, res, data
             @emit "#{context}:#{event}", req, res, data
             @emit "#{method}:#{event}", req, res, data
+            @emit "#{event}", req, res, data
 
-      @_attachAllowHeader context
+    @_attachHeaders()
 
   register: (app, methods, contexts) ->
     @_do methods, contexts, (controller) ->
@@ -70,13 +72,24 @@ module.exports = class Resource extends events.EventEmitter
       for method in methods
         action @[context][method]
 
-  _attachAllowHeader: (context) ->
-    factory = new AllowHeaderFactory [
-      @[context].get
-      @[context].post
-      @[context].put
-      @[context].delete
-    ]
+  _attachHeaders: ->
+    @_attachAcceptHeader()
+    @_attachAllowHeader()
 
-    @on "#{context}:beforeSending", (req, res) ->
-      res.set "Allow", factory.factory()
+  _attachAcceptHeader: ->
+    accept = new AcceptHeaderFactory
+
+    @on "beforeSending", (req, res) ->
+      res.set "Accept", accept.factory()
+
+  _attachAllowHeader: ->
+    CONTEXTS.forEach (context) =>
+      allow = new AllowHeaderFactory [
+        @[context].get
+        @[context].post
+        @[context].put
+        @[context].delete
+      ]
+
+      @on "#{context}:beforeSending", (req, res) ->
+        res.set "Allow", allow.factory()
