@@ -22,12 +22,12 @@ module.exports = class Controller extends events.EventEmitter
 
   register: (app) ->
     app[@method] @url, (req, res) =>
-      @controller req, res
+      @_controller req, res
     @
 
-  controller: (req, res) ->
+  _controller: (req, res) ->
     return res.send 405 if @_disabled
-    @_controller req, res
+    @controller req, res
 
   _sendFiltered: (req, res, code, data) ->
     @_send req, res, code, data, true

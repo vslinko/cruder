@@ -7,7 +7,7 @@ module.exports = class CollectionGetController extends QueryController
     @method = "get"
     @query = @Model.find()
 
-  _controller: (req, res) ->
+  controller: (req, res) ->
     query = @_query req, res
 
     query.exec (err, docs) =>

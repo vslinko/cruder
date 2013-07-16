@@ -9,7 +9,7 @@ module.exports = class CollectionPostController extends Controller
   factory: (req, res) ->
     new @Model req.body
 
-  _controller: (req, res) ->
+  controller: (req, res) ->
     doc = @factory req, res
 
     @emit "beforeSaving", req, res, doc

@@ -15,7 +15,7 @@ module.exports = class DocumentPutController extends QueryController
     doc[key] = value for key, value of data
     doc
 
-  _controller: (req, res) ->
+  controller: (req, res) ->
     query = @_query req, res
 
     query.exec (err, doc) =>
