@@ -66,22 +66,24 @@ class Controller
   register: (app) ->
     app[@method].call app, @url, @controller.bind @
 
-  _beforeSending: ->
-    if typeof @beforeSending is "function"
-      @beforeSending.apply @, arguments
-    else
-      Array::pop.call arguments
+  controller: (req, res) ->
+    return res.send 405 if @disabled
+    @_controller req, res
 
-  _afterSending: ->
-    if typeof @afterSending is "function"
-      @afterSending.apply @, arguments
+  _sendFiltered: (req, res, code, data) ->
+    data = @beforeSending req, res, data if @beforeSending
+    res.send code, data
+    @afterSending req, res, data if @afterSending
+
+  _send: (req, res, code, data) ->
+    @beforeSending req, res, data if @beforeSending
+    res.send code, data
+    @afterSending req, res, data if @afterSending
 
 
 class DisabledController extends Controller
   controller: (req, res) ->
-    @_beforeSending req, res
-    res.send 405
-    @_afterSending req, res
+    @_send req, res, 405
 
 
 class QueryController extends Controller
@@ -98,17 +100,11 @@ class CollectionGetController extends QueryController
     @method = "get"
     @query = @Model.find()
 
-  controller: (req, res) ->
-    return res.send 405 if @disabled
-
+  _controller: (req, res) ->
     query = @_query req, res
-
     query.exec (err, docs) =>
       return res.send 500 if err
-
-      docs = @_beforeSending req, res, docs
-      res.send docs
-      @_afterSending req, res, docs
+      @_sendFiltered req, res, 200, docs
 
 
 class CollectionPostController extends Controller
@@ -119,21 +115,13 @@ class CollectionPostController extends Controller
   factory: (req, res) ->
     new @Model req.body
 
-  controller: (req, res) ->
-    return res.send 405 if @disabled
-
+  _controller: (req, res) ->
     doc = @factory req, res
-
     doc.save (err) =>
-      if err
-        return res.send 400, err if err.name is "ValidationError"
-        return res.send 500
-
-      res.set "Location", @url.replace ":id", doc._id
-
-      doc = @_beforeSending req, res, doc
-      res.send 201, doc
-      @_afterSending req, res, doc
+      return res.send 400, err if err?.name is "ValidationError"
+      return res.send 500 if err
+      res.set "Location", @url + "/" +  doc._id
+      @_sendFiltered req, res, 201, doc
 
 
 class CollectionPutController extends DisabledController
@@ -148,17 +136,11 @@ class CollectionDeleteController extends QueryController
     @method = "delete"
     @query = @Model.remove()
 
-  controller: (req, res) ->
-    return res.send 405 if @disabled
-
+  _controller: (req, res) ->
     query = @_query req, res
-
     query.exec (err) =>
       return res.send 500 if err
-
-      @_beforeSending req, res
-      res.send 200
-      @_afterSending req, res
+      @_send req, res, 200
 
 
 class DocumentGetController extends QueryController
@@ -169,18 +151,12 @@ class DocumentGetController extends QueryController
   query: (req, res) ->
     @Model.findOne _id: req.params.id
 
-  controller: (req, res) ->
-    return res.send 405 if @disabled
-
+  _controller: (req, res) ->
     query = @_query req, res
-
     query.exec (err, doc) =>
       return req.send 500 if err
       return req.send 404 unless doc
-
-      doc = @_beforeSending req, res, doc
-      res.send 200, doc
-      @_afterSending req, res, doc
+      @_sendFiltered req, res, 200, doc
 
 
 class DocumentPostController extends DisabledController
@@ -203,23 +179,15 @@ class DocumentPutController extends QueryController
     doc[key] = value for key, value of data
     doc
 
-  controller: (req, res) ->
-    return res.send 405 if @disabled
-
+  _controller: (req, res) ->
     query = @_query req, res
-
     query.exec (err, doc) =>
       return res.send 500 if err
       return res.send 404 unless doc
-
       doc = @beforeSaving req, res, doc
-
       doc.save (err) =>
         return res.send 500 if err
-
-        doc = @_beforeSending req, res, doc
-        res.send 200, doc
-        @_afterSending req, res, doc
+        @_sendFiltered req, res, 200, doc
 
 
 class DocumentDeleteController extends QueryController
@@ -230,17 +198,11 @@ class DocumentDeleteController extends QueryController
   query: (req, res) ->
     @Model.remove _id: req.params.id
 
-  controller: (req, res) ->
-    return res.send 405 if @disabled
-
+  _controller: (req, res) ->
     query = @_query req, res
-
     query.exec (err) =>
       return res.send 500 if err
-
-      @_beforeSending req, res
-      res.send 200
-      @_afterSending req, res
+      @_send req, res, 200
 
 
 module.exports = (app) ->

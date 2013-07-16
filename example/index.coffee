@@ -30,6 +30,7 @@ sortedUsersResource = resource User,
 sortedUsersResource.disable()
 sortedUsersResource.enable("get", "collection")
 
+
 # setup
 zombie = new User username: "Zombie", password: "Attack"
 bobby = new User username: "Bobby", password: "Cobby"
