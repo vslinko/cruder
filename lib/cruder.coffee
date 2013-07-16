@@ -1,8 +1,11 @@
+events = require "events"
+
+
 CONTEXTS = ["collection", "document"]
 METHODS = ["get", "post", "put", "delete"]
+EVENTS = ["beforeSaving", "beforeSending", "afterSending"]
 
-
-class Resource
+class Resource extends events.EventEmitter
   constructor: (app, Model, options = {}) ->
     options.baseUrl ||= Model.modelName
 
@@ -24,13 +27,21 @@ class Resource
       put: new DocumentPutController Model, documentUrl
       delete: new DocumentDeleteController Model, documentUrl
 
-    for context in CONTEXTS
-      for method in METHODS
+    CONTEXTS.forEach (context) =>
+      @_attachAllowHeader context
+
+      METHODS.forEach (method) =>
         controller = @[context][method]
 
         if options[context]?[method]
           for key, value of options[context]?[method]
             controller[key] = value
+
+        EVENTS.forEach (event) =>
+          controller.on event, (req, res, data) =>
+            @emit "#{method}:#{context}:#{event}", req, res, data
+            @emit "#{context}:#{event}", req, res, data
+            @emit "#{method}:#{event}", req, res, data
 
   register: (app, methods, contexts) ->
     @_do methods, contexts, (controller) ->
@@ -52,39 +63,81 @@ class Resource
       for method in methods
         action @[context][method]
 
+  _attachAllowHeader: (context) ->
+    factory = new AllowHeaderFactory [
+      @[context].get
+      @[context].post
+      @[context].put
+      @[context].delete
+    ]
 
-class Controller
+    @on "#{context}:beforeSending", (req, res) ->
+      res.set "Allow", factory.factory()
+
+
+class AllowHeaderFactory
+  constructor: (@controllers) ->
+
+  factory: ->
+    allow = []
+
+    for controller in @controllers
+      if controller.enabled()
+        allow.push controller.method.toUpperCase()
+
+    allow.join ", "
+
+
+class Controller extends events.EventEmitter
   constructor: (@Model, @url) ->
-    @disabled = false
+    @_disabled = false
 
   disable: ->
-    @disabled = true
+    @_disabled = true
 
   enable: ->
-    @disabled = false
+    @_disabled = false
+
+  disabled: ->
+    @_disabled
+
+  enabled: ->
+    not @_disabled
 
   register: (app) ->
     app[@method] @url, (req, res) =>
       @controller req, res
 
   controller: (req, res) ->
-    return res.send 405 if @disabled
+    return res.send 405 if @_disabled
     @_controller req, res
 
   _sendFiltered: (req, res, code, data) ->
-    data = @beforeSending req, res, data if @beforeSending
-    res.send code, data
-    @afterSending req, res, data if @afterSending
+    @_send req, res, code, data, true
 
-  _send: (req, res, code, data) ->
-    @beforeSending req, res, data if @beforeSending
+  _send: (req, res, code, data, filter = false) ->
+    @emit "beforeSending", req, res, data
+
+    if typeof @beforeSending is "function"
+      if filter
+        data = @beforeSending req, res, data
+      else
+        @beforeSending req, res, data
+
     res.send code, data
-    @afterSending req, res, data if @afterSending
+
+    @emit "afterSending", req, res, data
+
+    if typeof @afterSending is "function"
+      @afterSending req, res, data
 
 
 class DisabledController extends Controller
-  controller: (req, res) ->
-    @_send req, res, 405
+  constructor: ->
+    super
+    @_disabled = true
+
+  enable: ->
 
 
 class QueryController extends Controller
@@ -118,6 +171,9 @@ class CollectionPostController extends Controller
 
   _controller: (req, res) ->
     doc = @factory req, res
+    @emit "beforeSaving", req, res, doc
+    if typeof @beforeSaving is "function"
+      doc = @beforeSaving req, res, doc
     doc.save (err) =>
       return res.send 400, err if err?.name is "ValidationError"
       return res.send 500 if err
@@ -185,6 +241,7 @@ class DocumentPutController extends QueryController
     query.exec (err, doc) =>
       return res.send 500 if err
       return res.send 404 unless doc
+      @emit "beforeSaving", req, res, doc
       doc = @beforeSaving req, res, doc
       doc.save (err) =>
         return res.send 500 if err
@@ -214,6 +271,7 @@ module.exports = (app) ->
 
 
 module.exports.Resource = Resource
+module.exports.AllowHeaderFactory = AllowHeaderFactory
 module.exports.Controller = Controller
 module.exports.DisabledController = DisabledController
 module.exports.QueryController = QueryController
