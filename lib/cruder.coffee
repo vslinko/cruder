@@ -37,6 +37,26 @@ module.exports = (app) ->
       afterSending: (req, res) ->
     , options.collection.post
 
+    options.collection.put = merge
+      enabled: true
+      method: "put"
+      url: "/#{options.name}"
+      middlewares: []
+      beforeSending: (req, res) ->
+      afterSending: (req, res) ->
+    , options.collection.put
+
+    options.collection.delete = merge
+      enabled: true
+      method: "delete"
+      url: "/#{options.name}"
+      middlewares: []
+      query: (req, res) ->
+        Model.remove()
+      beforeSending: (req, res) ->
+      afterSending: (req, res) ->
+    , options.collection.delete
+
     options.document.get = merge
       enabled: true
       method: "get"
@@ -48,6 +68,15 @@ module.exports = (app) ->
         doc
       afterSending: (req, res) ->
     , options.document.get
+
+    options.document.post = merge
+      enabled: true
+      method: "post"
+      url: "/#{options.name}/:id"
+      middlewares: []
+      beforeSending: (req, res) ->
+      afterSending: (req, res) ->
+    , options.document.post
 
     options.document.put = merge
       enabled: true
@@ -110,6 +139,22 @@ actions =
           res.send 201, doc
           options.afterSending req, res, doc
 
+    put: (options) ->
+      (req, res) ->
+        options.beforeSending req, res
+        res.send 405
+        options.afterSending req, res
+
+    delete: (options) ->
+      (req, res) ->
+        return res.send 405 unless options.enabled
+        query = options.query req, res
+        query.exec (err) ->
+          return res.send 500 if err
+          options.beforeSending req, res
+          res.send 200
+          options.afterSending req, res
+
   document:
     get: (options) ->
       (req, res) ->
@@ -121,6 +166,12 @@ actions =
           doc = options.beforeSending req, res, doc
           res.send 200, doc
           options.afterSending req, res, doc
+
+    post: (options) ->
+      (req, res) ->
+        options.beforeSending req, res
+        res.send 405
+        options.afterSending req, res
 
     put: (options) ->
       (req, res) ->
