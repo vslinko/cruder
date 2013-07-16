@@ -64,7 +64,8 @@ class Controller
     @disabled = false
 
   register: (app) ->
-    app[@method].call app, @url, @controller.bind @
+    app[@method] @url, (req, res) =>
+      @controller req, res
 
   controller: (req, res) ->
     return res.send 405 if @disabled
