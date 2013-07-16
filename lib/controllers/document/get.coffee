@@ -13,6 +13,6 @@ module.exports = class DocumentGetController extends QueryController
     query = @_query req, res
 
     query.exec (err, doc) =>
-      return req.send 500 if err
-      return req.send 404 unless doc
+      return res.send 500 if err
+      return res.send 404 unless doc
       @_sendFiltered req, res, 200, doc
