@@ -5,6 +5,7 @@ CONTEXTS = ["collection", "document"]
 METHODS = ["get", "post", "put", "delete"]
 EVENTS = ["beforeSaving", "beforeSending", "afterSending"]
 
+
 class Resource extends events.EventEmitter
   constructor: (app, Model, options = {}) ->
     options.baseUrl ||= Model.modelName
@@ -12,26 +13,16 @@ class Resource extends events.EventEmitter
     options.baseUrl = options.baseUrl.replace /\/*$/, ""
     options.baseUrl = options.baseUrl.replace /^\/*/, "/"
 
-    collectionUrl = options.baseUrl
-    documentUrl = options.baseUrl + "/:id"
-
-    @collection =
-      get: new CollectionGetController Model, collectionUrl
-      post: new CollectionPostController Model, collectionUrl
-      put: new CollectionPutController Model, collectionUrl
-      delete: new CollectionDeleteController Model, collectionUrl
-
-    @document =
-      get: new DocumentGetController Model, documentUrl
-      post: new DocumentPostController Model, documentUrl
-      put: new DocumentPutController Model, documentUrl
-      delete: new DocumentDeleteController Model, documentUrl
+    urls =
+      collection: options.baseUrl
+      document: options.baseUrl + "/:id"
 
     CONTEXTS.forEach (context) =>
-      @_attachAllowHeader context
+      @[context] = {}
 
       METHODS.forEach (method) =>
-        controller = @[context][method]
+        controller = new controllers[context][method] Model, urls[context]
+        @[context][method] = controller
 
         if options[context]?[method]
           for key, value of options[context]?[method]
@@ -42,6 +33,8 @@ class Resource extends events.EventEmitter
             @emit "#{method}:#{context}:#{event}", req, res, data
             @emit "#{context}:#{event}", req, res, data
             @emit "#{method}:#{event}", req, res, data
+
+      @_attachAllowHeader context
 
   register: (app, methods, contexts) ->
     @_do methods, contexts, (controller) ->
@@ -268,6 +261,19 @@ module.exports = (app) ->
     resource = new Resource app, Model, options
     resource.register app
     resource
+
+
+controllers =
+  collection:
+    get: CollectionGetController
+    post: CollectionPostController
+    put: CollectionPutController
+    delete: CollectionDeleteController
+  document:
+    get: DocumentGetController
+    post: DocumentPostController
+    put: DocumentPutController
+    delete: DocumentDeleteController
 
 
 module.exports.Resource = Resource
