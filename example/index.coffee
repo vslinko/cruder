@@ -24,7 +24,7 @@ app.use express.bodyParser()
 resource = cruder app
 resource User
 resource User,
-  name: "sorted-users"
+  baseUrl: "/sorted-users"
   collection:
     get: query: -> User.find().sort(username: 1)
     post: enabled: false

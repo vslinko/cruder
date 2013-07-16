@@ -8,14 +8,19 @@ merge = (dest, source) ->
 
 module.exports = (app) ->
   (Model, options = {}) ->
-    options.name ||= Model.modelName
+    options.baseUrl ||= Model.modelName
     options.collection ||= {}
     options.document ||= {}
 
+    options.baseUrl = options.baseUrl.replace /\/*$/, ""
+    options.baseUrl = options.baseUrl.replace /^\/*/, "/"
+
+    urls =
+      collection: options.baseUrl
+      document: options.baseUrl + "/:id"
+
     options.collection.get = merge
       enabled: true
-      method: "get"
-      url: "/#{options.name}"
       middlewares: []
       query: (req, res) ->
         Model.find()
@@ -26,8 +31,6 @@ module.exports = (app) ->
 
     options.collection.post = merge
       enabled: true
-      method: "post"
-      url: "/#{options.name}"
       middlewares: []
       doc: (req, res) ->
         new Model req.body
@@ -39,8 +42,6 @@ module.exports = (app) ->
 
     options.collection.put = merge
       enabled: true
-      method: "put"
-      url: "/#{options.name}"
       middlewares: []
       beforeSending: (req, res) ->
       afterSending: (req, res) ->
@@ -48,8 +49,6 @@ module.exports = (app) ->
 
     options.collection.delete = merge
       enabled: true
-      method: "delete"
-      url: "/#{options.name}"
       middlewares: []
       query: (req, res) ->
         Model.remove()
@@ -59,8 +58,6 @@ module.exports = (app) ->
 
     options.document.get = merge
       enabled: true
-      method: "get"
-      url: "/#{options.name}/:id"
       middlewares: []
       query: (req, res) ->
         Model.findOne _id: req.params.id
@@ -71,8 +68,6 @@ module.exports = (app) ->
 
     options.document.post = merge
       enabled: true
-      method: "post"
-      url: "/#{options.name}/:id"
       middlewares: []
       beforeSending: (req, res) ->
       afterSending: (req, res) ->
@@ -80,8 +75,6 @@ module.exports = (app) ->
 
     options.document.put = merge
       enabled: true
-      method: "put"
-      url: "/#{options.name}/:id"
       middlewares: []
       query: (req, res) ->
         Model.findOne _id: req.params.id
@@ -96,8 +89,6 @@ module.exports = (app) ->
 
     options.document.delete = merge
       enabled: true
-      method: "delete"
-      url: "/#{options.name}/:id"
       middlewares: []
       query: (req, res) ->
         Model.remove _id: req.params.id
@@ -105,15 +96,17 @@ module.exports = (app) ->
       afterSending: (req, res) ->
     , options.document.delete
 
+
     for context in ["collection", "document"]
-      for action, opts of options[context]
+      for method in ["get", "post", "put", "delete"]
+        opts = options[context][method]
         args = []
 
-        args.push opts.url
+        args.push urls[context]
         args.concat opts.middlewares
-        args.push actions[context][action] opts
+        args.push actions[context][method] opts
 
-        app[opts.method].apply app, args
+        app[method].apply app, args
 
 
 actions =
