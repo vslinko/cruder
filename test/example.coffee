@@ -26,8 +26,8 @@ describe "users", ->
       makeRequest(request.get "/users").then (res) ->
         res.should.have.status 200
         res.body.length.should.equal 2
-        res.body[0].username.should.equal "Bobby"
-        res.body[1].username.should.equal "Zombie"
+        res.body[0].username.should.equal "Zombie"
+        res.body[1].username.should.equal "Bobby"
       .should.notify callback
 
   describe "POST /users", ->
@@ -83,4 +83,13 @@ describe "users", ->
         makeRequest request.get "/users"
       .then (res) ->
         res.body.length.should.equal 2
+      .should.notify callback
+
+  describe "GET /sorted-users", ->
+    it "should respond with users sorted by username", (callback) ->
+      makeRequest(request.get "/sorted-users").then (res) ->
+        res.should.have.status 200
+        res.body.length.should.equal 2
+        res.body[0].username.should.equal "Bobby"
+        res.body[1].username.should.equal "Zombie"
       .should.notify callback
