@@ -27,7 +27,7 @@ app.use express.bodyParser()
 
 resource = cruder app
 # first argument is model, second is options
-resource User, list: query: -> User.find().sort(username: 1)
+resource User, collection: get: query: User.find().sort(username: 1)
 
 app.listen 3000 if require.main is module
 ```
@@ -36,125 +36,128 @@ app.listen 3000 if require.main is module
 
 ```coffee
 options =
-  # enabled actions
-  actions: ["list", "post", "get", "put", "delete"]
+  # resource base url
+  baseUrl: Model.modelName
 
-  # resource name
-  name: Model.modelName
+  # document field name for Last-Modified header
+  modificationTimeField: undefined
 
   # GET /
-  list:
-    # express method
-    method: "get"
+  collection:
+    get:
+      # respond with 405 status if true
+      _disabled: false
 
-    # request url
-    url: "/#{options.name}"
+      # query factory
+      query: (req, res) ->
+        Model.find()
 
-    # express middlewares
-    middlewares: []
+      # method for state changes before sending response
+      beforeSending: (req, res, docs) ->
+        docs
 
-    # query factory
-    query: (req, res) ->
-      Model.find()
+      # method to perform actions after sending response
+      afterSending: (req, res) ->
 
-    # method for state changes before sending response
-    beforeSending: (req, res, docs) ->
-      docs
+    # POST /
+    post:
+      # respond with 405 status if true
+      _disabled: false
 
-    # method to perform actions after sending response
-    afterSending: (req, res) ->
+      # document factory
+      factory: (req, res) ->
+        new Model req.body
 
-  # POST /
-  post:
-    # express method
-    method: "post"
+      # method for state changes before sending response
+      beforeSending: (req, res, doc) ->
+        doc
 
-    # request url
-    url: "/#{options.name}"
+      # method to perform actions after sending response
+      afterSending: (req, res) ->
 
-    # express middlewares
-    middlewares: []
+    # PUT /
+    put:
+      # method for state changes before sending response
+      beforeSending: (req, res) ->
 
-    # document factory
-    doc: (req, res) ->
-      new Model req.body
+      # method to perform actions after sending response
+      afterSending: (req, res) ->
 
-    # method for state changes before sending response
-    beforeSending: (req, res, doc) ->
-      res.set "Location", "/#{Model.modelName}/#{doc._id}"
-      doc
+    # DELETE /
+    delete:
+      # respond with 405 status if true
+      _disabled: false
 
-    # method to perform actions after sending response
-    afterSending: (req, res) ->
+      # query factory
+      query: (req, res) ->
+        Model.remove()
 
-  # GET /:id
-  get:
-    # express method
-    method: "get"
+      # method for state changes before sending response
+      beforeSending: (req, res) ->
 
-    # request url
-    url: "/#{options.name}/:id"
+      # method to perform actions after sending response
+      afterSending: (req, res) ->
 
-    # express middlewares
-    middlewares: []
+  document:
+    # GET /:id
+    get:
+      # respond with 405 status if true
+      _disabled: false
 
-    # query factory
-    query: (req, res) ->
-      Model.findOne _id: req.params.id
+      # query factory
+      query: (req, res) ->
+        Model.findOne _id: req.params.id
 
-    # method for state changes before sending response
-    beforeSending: (req, res, doc) ->
-      doc
+      # method for state changes before sending response
+      beforeSending: (req, res, doc) ->
+        doc
 
-    # method to perform actions after sending response
-    afterSending: (req, res) ->
+      # method to perform actions after sending response
+      afterSending: (req, res) ->
 
-  # PUT /:id
-  put:
-    # express method
-    method: "put"
+    # POST /:id
+    post:
+      # method for state changes before sending response
+      beforeSending: (req, res) ->
 
-    # request url
-    url: "/#{options.name}/:id"
+      # method to perform actions after sending response
+      afterSending: (req, res) ->
 
-    # express middlewares
-    middlewares: []
+    # PUT /:id
+    put:
+      # respond with 405 status if true
+      _disabled: false
 
-    # query factory
-    query: (req, res) ->
-      Model.findOne _id: req.params.id
+      # query factory
+      query: (req, res) ->
+        Model.findOne _id: req.params.id
 
-    # method for state changes before saving document
-    beforeSaving: (req, res, doc) ->
-      data = req.body
-      delete data._id
-      merge doc, data
+      # method for state changes before saving document
+      beforeSaving: (req, res, doc) ->
+        data = req.body
+        delete data._id
+        doc[key] = value for key, value of data
+        doc
 
-    # method for state changes before sending response
-    beforeSending: (req, res, doc) ->
-      doc
+      # method for state changes before sending response
+      beforeSending: (req, res, doc) ->
+        doc
 
-    # method to perform actions after sending response
-    afterSending: (req, res) ->
+      # method to perform actions after sending response
+      afterSending: (req, res) ->
 
-  # DELETE /:id
-  delete:
-    # express method
-    method: "delete"
+    # DELETE /:id
+    delete:
+      # respond with 405 status if true
+      _disabled: false
 
-    # request url
-    url: "/#{options.name}/:id"
+      # query factory
+      query: (req, res) ->
+        Model.remove _id: req.params.id
 
-    # express middlewares
-    middlewares: []
+      # method for state changes before sending response
+      beforeSending: (req, res) ->
 
-    # query factory
-    query: (req, res) ->
-      Model.remove _id: req.params.id
-
-    # method for state changes before sending response
-    beforeSending: (req, res) ->
-
-    # method to perform actions after sending response
-    afterSending: (req, res) ->
+      # method to perform actions after sending response
+      afterSending: (req, res) ->
 ```
