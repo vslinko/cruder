@@ -49,6 +49,14 @@ describe "users", ->
         res.body.length.should.equal 3
       .should.notify callback
 
+  describe "PUT /users", ->
+    it "should respond with 405", (callback) ->
+      req = request.put "/users"
+
+      makeRequest(req).then (res) ->
+        res.should.have.status 405
+      .should.notify callback
+
   describe "GET /users/:id", ->
     it "should respond with user", (callback) ->
       makeRequest(request.get "/users/#{id}").then (res) ->
@@ -56,6 +64,14 @@ describe "users", ->
         res.body.username.should.equal "Good"
         res.body.password.should.equal "Day"
         res.body._id.should.equal id
+      .should.notify callback
+
+  describe "POST /users/:id", ->
+    it "should respond with 405", (callback) ->
+      req = request.post "/users/#{id}"
+
+      makeRequest(req).then (res) ->
+        res.should.have.status 405
       .should.notify callback
 
   describe "PUT /users/:id", ->
@@ -92,4 +108,14 @@ describe "users", ->
         res.body.length.should.equal 2
         res.body[0].username.should.equal "Bobby"
         res.body[1].username.should.equal "Zombie"
+      .should.notify callback
+
+  describe "DELETE /users", ->
+    it "should delete users", (callback) ->
+      makeRequest(request.del "/users").then (res) ->
+        res.should.have.status 200
+      .then ->
+        makeRequest request.get "/users"
+      .then (res) ->
+        res.body.length.should.equal 0
       .should.notify callback
