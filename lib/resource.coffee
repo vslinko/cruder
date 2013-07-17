@@ -28,32 +28,35 @@ module.exports = class Resource extends events.EventEmitter
     baseUrl = Model.modelName
     baseUrl = baseUrl.replace /\/*$/, ""
     baseUrl = baseUrl.replace /^\/*/, "/"
-
-    options.collectionUrl ||= baseUrl
-    options.documentUrl ||= baseUrl + "/:_id"
-
+    
     urls =
-      collection: options.collectionUrl
-      document: options.documentUrl
+      collection: baseUrl
+      document: baseUrl + "/:_id"
 
     CONTEXTS.forEach (context) =>
       options[context] ||= {}
       @[context] = {}
 
-      url = urls[context]
+      unless options[context].url
+        options[context].url = urls[context]
 
-      if options[context].params
-        params = options[context].params
-      else
-        if urls[context] instanceof RegExp
-          throw new Error "params must be defined if url is regexp"
+      url = options[context].url
 
+      unless options[context].params
+        if url instanceof RegExp
+          message = [
+            "options.#{context}.params must be configured"
+            "when options.#{context}.url is instance of RegExp"
+          ]
+          throw new Error message.join " "
+
+        options[context].params = {}
         paramRegexp = /:([^\/]+)/g
-        params = {}
 
-        while matches = paramRegexp.exec urls[context]
-          params[matches[1]] = matches[1]
+        while matches = paramRegexp.exec url
+          options[context].params[matches[1]] = matches[1]
 
+      params = options[context].params
 
       METHODS.forEach (method) =>
         Controller = controllers[context][method]
@@ -77,11 +80,14 @@ module.exports = class Resource extends events.EventEmitter
     if options.modificationTimeField
       @_attachLastModifiedHeader options.modificationTimeField
 
+    if options.document.url instanceof RegExp and not options.locationUrl
+      message = [
+        "options.locationUrl must be configured"
+        "when options.document.url is instance of RegExp"
+      ]
+      throw new Error message.join " "
 
-    if options.documentUrl instanceof RegExp and not options.locationUrl
-      throw new Error "locationUrl must be defined if documentUrl is regex"
-
-    @_attachLocationHeader options.locationUrl or options.documentUrl
+    @_attachLocationHeader options.locationUrl or options.document.url
 
   register: (app, methods, contexts) ->
     @_do methods, contexts, (controller) ->
