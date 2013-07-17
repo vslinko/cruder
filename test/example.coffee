@@ -8,7 +8,10 @@ describe "users", ->
   chai.should()
 
   request = null
-  id = null
+  zombieId = null
+  bobbyId = null
+  goodId = null
+  postId = null
 
   before (callback) ->
     @timeout 0
@@ -28,6 +31,8 @@ describe "users", ->
         res.body.length.should.equal 2
         res.body[0].username.should.equal "Zombie"
         res.body[1].username.should.equal "Bobby"
+        zombieId = res.body[0]._id
+        bobbyId = res.body[1]._id
       .should.notify callback
 
   describe "POST /users", ->
@@ -42,7 +47,7 @@ describe "users", ->
         res.body.username.should.equal "Good"
         res.body.password.should.equal "Day"
         res.body.should.have.property "_id"
-        id = res.body._id
+        goodId = res.body._id
       .then ->
         makeRequest request.get "/users"
       .then (res) ->
@@ -59,16 +64,16 @@ describe "users", ->
 
   describe "GET /users/:id", ->
     it "should respond with user", (callback) ->
-      makeRequest(request.get "/users/#{id}").then (res) ->
+      makeRequest(request.get "/users/#{goodId}").then (res) ->
         res.should.have.status 200
         res.body.username.should.equal "Good"
         res.body.password.should.equal "Day"
-        res.body._id.should.equal id
+        res.body._id.should.equal goodId
       .should.notify callback
 
   describe "POST /users/:id", ->
     it "should respond with 405", (callback) ->
-      req = request.post "/users/#{id}"
+      req = request.post "/users/#{goodId}"
 
       makeRequest(req).then (res) ->
         res.should.have.status 405
@@ -76,7 +81,7 @@ describe "users", ->
 
   describe "PUT /users/:id", ->
     it "should update user data", (callback) ->
-      req = request.put "/users/#{id}"
+      req = request.put "/users/#{goodId}"
       
       req.req (req) ->
         req.send username: "Bad"
@@ -85,12 +90,12 @@ describe "users", ->
         res.should.have.status 200
         res.body.username.should.equal "Bad"
         res.body.password.should.equal "Day"
-        res.body._id.should.equal id
+        res.body._id.should.equal goodId
       .should.notify callback
 
   describe "DELETE /users/:id", ->
     it "should delete user", (callback) ->
-      makeRequest(request.del "/users/#{id}").then (res) ->
+      makeRequest(request.del "/users/#{goodId}").then (res) ->
         res.should.have.status 200
         res.body.should.not.have.property "username"
         res.body.should.not.have.property "password"
@@ -108,6 +113,109 @@ describe "users", ->
         res.body.length.should.equal 2
         res.body[0].username.should.equal "Bobby"
         res.body[1].username.should.equal "Zombie"
+      .should.notify callback
+
+  describe "GET /users/:user/posts", ->
+    it "should respond with user posts", (callback) ->
+      makeRequest(request.get "/users/#{bobbyId}/posts").then (res) ->
+        res.should.have.status 200
+        res.body.length.should.equal 2
+        res.body[0].title.should.equal "example"
+        res.body[1].title.should.equal "test"
+      .then ->
+        makeRequest request.get "/users/#{zombieId}/posts"
+      .then (res) ->
+        res.should.have.status 200
+        res.body.length.should.equal 0
+      .should.notify callback
+
+  describe "POST /users/:user/posts", ->
+    it "should create new user post", (callback) ->
+      req = request.post "/users/#{zombieId}/posts"
+
+      req.req (req) ->
+        req.send title: "message", text: "message"
+
+      makeRequest(req).then (res) ->
+        res.should.have.status 201
+        res.body.should.have.property "title"
+        res.body.should.have.property "text"
+        res.body.should.have.property "_id"
+        postId = res.body._id
+      .then ->
+        makeRequest request.get "/users/#{zombieId}/posts"
+      .then (res) ->
+        res.should.have.status 200
+        res.body.length.should.equal 1
+      .then ->
+        makeRequest request.get "/users/#{bobbyId}/posts"
+      .then (res) ->
+        res.should.have.status 200
+        res.body.length.should.equal 2
+      .should.notify callback
+
+  describe "PUT /users/:user/posts", ->
+    it "should respond with 405", (callback) ->
+      makeRequest(request.put "/users/#{bobbyId}/posts").then (res) ->
+        res.should.have.status 405
+      .should.notify callback
+
+  describe "GET /users/:user/posts/:id", ->
+    it "should respond with user post", (callback) ->
+      makeRequest(request.get "/users/#{bobbyId}/posts/#{postId}").then (res) ->
+        res.should.have.status 404
+      .then ->
+        makeRequest request.get "/users/#{zombieId}/posts/#{postId}"
+      .then (res) ->
+        res.should.have.status 200
+      .should.notify callback
+
+  describe "POST /users/:user/posts/:id", ->
+    it "should respond with 405", (callback) ->
+      makeRequest(request.post "/users/#{bobbyId}/posts/#{postId}")
+      .then (res) ->
+        res.should.have.status 405
+      .should.notify callback
+
+  describe "PUT /users/:user/posts/:id", ->
+    it "should update user post", (callback) ->
+      req = request.put "/users/#{zombieId}/posts/#{postId}"
+
+      req.req (req) ->
+        req.send text: "egassem"
+
+      makeRequest(req).then (res) ->
+        res.should.have.status 200
+        res.body.should.have.property "title"
+        res.body.should.have.property "text"
+        res.body.should.have.property "_id"
+        res.body.title.should.equal "message"
+        res.body.text.should.equal "egassem"
+      .should.notify callback
+
+  describe "DELETE /users/:user/posts/:id", ->
+    it "should delete user post", (callback) ->
+      makeRequest(request.del "/users/#{bobbyId}/posts/#{postId}").then (res) ->
+        res.should.have.status 404
+      .then ->
+        makeRequest request.del "/users/#{zombieId}/posts/#{postId}"
+      .then (res) ->
+        res.should.have.status 200
+      .then ->
+        makeRequest request.get "/users/#{zombieId}/posts"
+      .then (res) ->
+        res.should.have.status 200
+        res.body.length.should.equal 0
+      .should.notify callback
+
+  describe "DELETE /users/:user/posts", ->
+    it "should delete user posts", (callback) ->
+      makeRequest(request.del "/users/#{bobbyId}/posts").then (res) ->
+        res.should.have.status 200
+      .then ->
+        makeRequest request.get "/users/#{bobbyId}/posts"
+      .then (res) ->
+        res.body.length.should.equal 0
       .should.notify callback
 
   describe "DELETE /users", ->
