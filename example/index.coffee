@@ -43,12 +43,11 @@ resource = cruder app
 resource User, modificationTimeField: "updatedAt"
 
 resource User,
-  baseUrl: "/sorted-users"
+  collectionUrl: "/sorted-users"
   modificationTimeField: "updatedAt"
   collection: get: query: User.find().sort(username: 1)
 .disable()
 .enable("get", "collection")
-
 
 resource Post,
   collectionUrl: /^\/users\/([A-Fa-f0-9]{24})\/posts\/?$/
@@ -56,33 +55,9 @@ resource Post,
   locationUrl: "/users/:user/posts/:_id"
   modificationTimeField: "updatedAt"
   collection:
-    get:
-      query: (req, res) ->
-        Post.find().where("user", req.params[0])
-    post:
-      factory: (req, res) ->
-        post = new Post req.body
-        post.user = req.params[0]
-        post
-    delete:
-      query: (req, res) ->
-        Post.remove().where("user", req.params[0])
+    params: ["user"]
   document:
-    get:
-      query: (req, res) ->
-        Post.findOne
-          user: req.params[0]
-          _id: req.params[1]
-    put:
-      query: (req, res) ->
-        Post.findOne
-          user: req.params[0]
-          _id: req.params[1]
-    delete:
-      query: (req, res) ->
-        Post.findOne
-          user: req.params[0]
-          _id: req.params[1]
+    params: ["user", "_id"]
 
 
 # setup

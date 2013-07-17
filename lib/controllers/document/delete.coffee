@@ -7,7 +7,7 @@ module.exports = class DocumentDeleteController extends QueryController
     @method = "delete"
 
   query: (req, res) ->
-    @Model.findOne _id: req.params.id
+    @Model.findOne @_params req
 
   controller: (req, res) ->
     query = @_query req, res

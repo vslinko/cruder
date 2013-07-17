@@ -25,23 +25,39 @@ controllers =
 
 module.exports = class Resource extends events.EventEmitter
   constructor: (Model, options = {}) ->
-    options.baseUrl ||= Model.modelName
+    baseUrl = Model.modelName
+    baseUrl = baseUrl.replace /\/*$/, ""
+    baseUrl = baseUrl.replace /^\/*/, "/"
 
-    options.baseUrl = options.baseUrl.replace /\/*$/, ""
-    options.baseUrl = options.baseUrl.replace /^\/*/, "/"
-
-    options.collectionUrl ||= options.baseUrl
-    options.documentUrl ||= options.baseUrl + "/:id"
+    options.collectionUrl ||= baseUrl
+    options.documentUrl ||= baseUrl + "/:_id"
 
     urls =
       collection: options.collectionUrl
       document: options.documentUrl
 
     CONTEXTS.forEach (context) =>
+      options[context] ||= {}
       @[context] = {}
 
+      url = urls[context]
+
+      if options[context].params
+        params = options[context].params
+      else
+        if urls[context] instanceof RegExp
+          throw new Error "params must be defined if url is regexp"
+
+        paramRegexp = /:([^\/]+)/g
+        params = {}
+
+        while matches = paramRegexp.exec urls[context]
+          params[matches[1]] = matches[1]
+
+
       METHODS.forEach (method) =>
-        controller = new controllers[context][method] Model, urls[context]
+        Controller = controllers[context][method]
+        controller = new Controller Model, url, params
         @[context][method] = controller
 
         if options[context]?[method]

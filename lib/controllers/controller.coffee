@@ -2,7 +2,7 @@ events = require "events"
 
 
 module.exports = class Controller extends events.EventEmitter
-  constructor: (@Model, @url) ->
+  constructor: (@Model, @url, @params) ->
     @_disabled = false
 
   disable: ->
@@ -24,6 +24,15 @@ module.exports = class Controller extends events.EventEmitter
     app[@method] @url, (req, res) =>
       @_controller req, res
     @
+
+  _params: (req) ->
+    filter = {}
+
+    for key, value of req.params
+      if @params[key]
+        filter[@params[key]] = value
+
+    filter
 
   _controller: (req, res) ->
     return res.send 405 if @_disabled

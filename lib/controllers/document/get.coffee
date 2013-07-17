@@ -7,7 +7,7 @@ module.exports = class DocumentGetController extends QueryController
     @method = "get"
 
   query: (req, res) ->
-    @Model.findOne _id: req.params.id
+    @Model.findOne @_params req
 
   controller: (req, res) ->
     query = @_query req, res

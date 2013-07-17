@@ -5,7 +5,9 @@ module.exports = class CollectionDeleteController extends QueryController
   constructor: ->
     super
     @method = "delete"
-    @query = @Model.remove()
+
+  query: (req, res) ->
+    @Model.remove @_params req
 
   controller: (req, res) ->
     query = @_query req, res

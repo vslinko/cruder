@@ -5,7 +5,9 @@ module.exports = class CollectionGetController extends QueryController
   constructor: ->
     super
     @method = "get"
-    @query = @Model.find()
+
+  query: (req, res) ->
+    @Model.find @_params req
 
   controller: (req, res) ->
     query = @_query req, res

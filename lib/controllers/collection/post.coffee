@@ -7,7 +7,9 @@ module.exports = class CollectionPostController extends Controller
     @method = "post"
 
   factory: (req, res) ->
-    new @Model req.body
+    doc = new @Model req.body
+    doc[key] = value for key, value of @_params req
+    doc
 
   controller: (req, res) ->
     doc = @factory req, res

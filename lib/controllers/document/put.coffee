@@ -7,7 +7,7 @@ module.exports = class DocumentPutController extends QueryController
     @method = "put"
 
   query: (req, res) ->
-    @Model.findOne _id: req.params.id
+    @Model.findOne @_params req
 
   beforeSaving: (req, res, doc) ->
     data = req.body
