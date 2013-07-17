@@ -7,11 +7,15 @@ module.exports = class DocumentDeleteController extends QueryController
     @method = "delete"
 
   query: (req, res) ->
-    @Model.remove _id: req.params.id
+    @Model.findOne _id: req.params.id
 
   controller: (req, res) ->
     query = @_query req, res
 
-    query.exec (err) =>
+    query.exec (err, doc) =>
       return res.send 500 if err
-      @_send req, res, 200
+      return res.send 404 unless doc
+
+      doc.remove (err) =>
+        return res.send 500 if err
+        @_send req, res, 200

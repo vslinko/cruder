@@ -29,9 +29,12 @@ module.exports = class Resource extends events.EventEmitter
     options.baseUrl = options.baseUrl.replace /\/*$/, ""
     options.baseUrl = options.baseUrl.replace /^\/*/, "/"
 
+    options.collectionUrl ||= options.baseUrl
+    options.documentUrl ||= options.baseUrl + "/:id"
+
     urls =
-      collection: options.baseUrl
-      document: options.baseUrl + "/:id"
+      collection: options.collectionUrl
+      document: options.documentUrl
 
     CONTEXTS.forEach (context) =>
       @[context] = {}

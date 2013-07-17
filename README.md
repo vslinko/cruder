@@ -39,6 +39,12 @@ options =
   # resource base url
   baseUrl: Model.modelName
 
+  # collection url
+  collectionUrl: options.baseUrl
+
+  # document url
+  documentUrl: options.baseUrl + "/:id"
+
   # document field name for Last-Modified header
   modificationTimeField: undefined
 
@@ -153,7 +159,7 @@ options =
 
       # query factory
       query: (req, res) ->
-        Model.remove _id: req.params.id
+        Model.findOne _id: req.params.id
 
       # method for state changes before sending response
       beforeSending: (req, res) ->

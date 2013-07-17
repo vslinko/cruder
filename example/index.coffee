@@ -18,7 +18,19 @@ UserSchema.pre "save", (next) ->
   @updatedAt = new Date
   next()
 
+PostSchema = new mongoose.Schema
+  title: type: String, required: true
+  text: type: String, required: true
+  user: mongoose.Schema.Types.ObjectId
+  createdAt: type: Date, default: Date.now
+  updatedAt: type: Date
+
+PostSchema.pre "save", (next) ->
+  @updatedAt = new Date
+  next()
+
 User = db.model "users", UserSchema
+Post = db.model "posts", PostSchema
 
 
 # app
@@ -38,15 +50,54 @@ resource User,
 .enable("get", "collection")
 
 
+resource Post,
+  collectionUrl: /^\/users\/([A-Fa-f0-9]{24})\/posts\/?$/
+  documentUrl: /^\/users\/([A-Fa-f0-9]{24})\/posts\/([A-Fa-f0-9]{24})\/?$/
+  modificationTimeField: "updatedAt"
+  collection:
+    get:
+      query: (req, res) ->
+        Post.find().where("user", req.params[0])
+    post:
+      factory: (req, res) ->
+        post = new Post req.body
+        post.user = req.params[0]
+        post
+    delete:
+      query: (req, res) ->
+        Post.remove().where("user", req.params[0])
+  document:
+    get:
+      query: (req, res) ->
+        Post.findOne
+          user: req.params[0]
+          _id: req.params[1]
+    put:
+      query: (req, res) ->
+        Post.findOne
+          user: req.params[0]
+          _id: req.params[1]
+    delete:
+      query: (req, res) ->
+        Post.findOne
+          user: req.params[0]
+          _id: req.params[1]
+
+
 # setup
 zombie = new User username: "Zombie", password: "Attack"
 bobby = new User username: "Bobby", password: "Cobby"
+examplePost = new Post title: "example", text: "example", user: bobby
+testPost = new Post title: "test", text: "test", user: bobby
 
 promise = sequence [
   nodefn.lift db.on.bind db, "connected"
   nodefn.lift User.remove.bind User
+  nodefn.lift Post.remove.bind Post
   nodefn.lift zombie.save.bind zombie
   nodefn.lift bobby.save.bind bobby
+  nodefn.lift examplePost.save.bind examplePost
+  nodefn.lift testPost.save.bind testPost
   -> nodefn.call app.listen.bind app, 3000 if require.main is module
 ]
 
