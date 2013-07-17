@@ -20,10 +20,4 @@ module.exports = class CollectionPostController extends Controller
     doc.save (err) =>
       return res.send 400, err if err?.name is "ValidationError"
       return res.send 500 if err
-
-      location = @url
-      for key, value of doc
-        location = location.replace ":" + key, value
-      res.set "Location", location + "/" + doc._id
-
       @_sendFiltered req, res, 201, doc

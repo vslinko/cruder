@@ -53,6 +53,7 @@ resource User,
 resource Post,
   collectionUrl: /^\/users\/([A-Fa-f0-9]{24})\/posts\/?$/
   documentUrl: /^\/users\/([A-Fa-f0-9]{24})\/posts\/([A-Fa-f0-9]{24})\/?$/
+  locationUrl: "/users/:user/posts/:_id"
   modificationTimeField: "updatedAt"
   collection:
     get:

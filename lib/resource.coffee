@@ -1,6 +1,7 @@
 AcceptHeader = require "./headers/accept"
 AllowHeader = require "./headers/allow"
-LastModified = require "./headers/last_modified"
+LastModifiedHeader = require "./headers/last_modified"
+LocationHeader = require "./headers/location"
 events = require "events"
 
 
@@ -60,6 +61,12 @@ module.exports = class Resource extends events.EventEmitter
     if options.modificationTimeField
       @_attachLastModifiedHeader options.modificationTimeField
 
+
+    if options.documentUrl instanceof RegExp and not options.locationUrl
+      throw new Error "locationUrl must be defined if documentUrl is regex"
+
+    @_attachLocationHeader options.locationUrl or options.documentUrl
+
   register: (app, methods, contexts) ->
     @_do methods, contexts, (controller) ->
       controller.register app
@@ -102,7 +109,13 @@ module.exports = class Resource extends events.EventEmitter
         allow.set res
 
   _attachLastModifiedHeader: (field) ->
-    lastModified = new LastModified field
+    lastModified = new LastModifiedHeader field
 
     @on "document:beforeSending", (req, res, doc) ->
       lastModified.set res, doc
+
+  _attachLocationHeader: (url) ->
+    location = new LocationHeader url
+
+    @on "post:collection:beforeSending", (req, res, doc) ->
+      location.set res, doc
