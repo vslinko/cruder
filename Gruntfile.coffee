@@ -12,11 +12,20 @@ module.exports = (grunt) ->
       grunt: "Gruntfile.coffee"
     coffeeCoverage: lib: src: "lib", dest: "lib", options: path: "relative"
     clean: coffeeCoverage: "lib/**/*.js"
+    watch:
+      test:
+        files: [
+          "example/**/*.coffee"
+          "lib/**/*.coffee"
+          "test/**/*.coffee"
+        ]
+        tasks: "simplemocha:example"
 
   grunt.loadNpmTasks "grunt-simple-mocha"
   grunt.loadNpmTasks "grunt-coffeelint"
   grunt.loadNpmTasks "grunt-coffee-coverage"
   grunt.loadNpmTasks "grunt-contrib-clean"
+  grunt.loadNpmTasks "grunt-contrib-watch"
 
   grunt.registerTask "default", [
     "coffeeCoverage:lib"
