@@ -1,32 +1,34 @@
-checkAuth = ["post", "put", "delete"]
-
 cruder = (app, Model, options, callback) ->
-  checkAuth = options.checkAuth if options.checkAuth
+  options.checkAuth ||= ["post", "put", "delete"]
   options.actions ||= ["list", "post", "get", "put", "delete"]
   options.modelName ||= Model.modelName
   options.query ||= Model.find()
 
+  checkAuth = (action) ->
+    (req, res, callback) ->
+      unless options.checkAuth.indexOf(action) is -1
+        return res.send 401 unless req.user
+    
+      callback()
+
   if "list" in options.actions
-    app.get "/#{options.modelName}", cruder.list options.query, callback
+    app.get "/#{options.modelName}", checkAuth("list"), cruder.list options.query, callback
 
   if "post" in options.actions
-    app.post "/#{options.modelName}", cruder.post Model, callback
+    app.post "/#{options.modelName}", checkAuth("post"), cruder.post Model, callback
 
   if "get" in options.actions
-    app.get "/#{options.modelName}/:id", cruder.get Model, callback
+    app.get "/#{options.modelName}/:id", checkAuth("get"), cruder.get Model, callback
 
   if "put" in options.actions
-    app.put "/#{options.modelName}/:id", cruder.put Model, callback
+    app.put "/#{options.modelName}/:id", checkAuth("put"), cruder.put Model, callback
 
   if "delete" in options.actions
-    app.delete "/#{options.modelName}/:id", cruder.delete Model, callback
+    app.delete "/#{options.modelName}/:id", checkAuth("delete"), cruder.delete Model, callback
 
 
 cruder.list = (query, callback) ->
   (req, res) ->
-    unless checkAuth.indexOf "list" is -1
-      return res.send 401 unless req.user
-
     query.find req.query
     query.exec (err, docs) ->
       return res.send 500 if err
@@ -36,9 +38,6 @@ cruder.list = (query, callback) ->
 
 cruder.post = (Model, callback) ->
   (req, res) ->
-    unless checkAuth.indexOf("post") is -1
-      return res.send 401 unless req.user
-
     doc = new Model req.body
 
     doc.save (err) ->
@@ -50,9 +49,6 @@ cruder.post = (Model, callback) ->
 
 cruder.get = (Model, callback) ->
   (req, res) ->
-    unless checkAuth.indexOf("get") is -1
-      return res.send 401 unless req.user
-
     Model.findOne _id: req.params.id, (err, doc) ->
       return req.send 500 if err
       return req.send 404 unless doc
@@ -62,9 +58,6 @@ cruder.get = (Model, callback) ->
 
 cruder.put = (Model, callback) ->
   (req, res) ->
-    unless checkAuth.indexOf("put") is -1
-      return res.send 401 unless req.user
-
     data = req.body
     delete data._id if data._id
 
@@ -85,9 +78,6 @@ cruder.put = (Model, callback) ->
 
 cruder.delete = (Model, callback) ->
   (req, res) ->
-    unless checkAuth.indexOf("delete") is -1
-      return res.send 401 unless req.user
-
     Model.remove _id: req.params.id, (err) ->
       return res.send 500 if err
       res.send 200
