@@ -230,30 +230,30 @@ or `afterSending`. You can subscribe to events in four ways:
 
 1. Subscribe to event from all controllers:
 
-  ```coffee
-  resource("users").on "beforeSending", (req, res) ->
-    res.set "Expires", new Date(Date.now() + 1000 * 60 * 60).toGMTString()
-  ```
+    ```coffee
+    resource("users").on "beforeSending", (req, res) ->
+      res.set "Expires", new Date(Date.now() + 1000 * 60 * 60).toGMTString()
+    ```
 
 2. Subscribe to event from collection or document controllers:
 
-  ```coffee
-  resource("users").on "document:beforeSending", (req, res, doc) ->
-    if doc
-      res.set "X-Doc-Id", doc._id
-  ```
+    ```coffee
+    resource("users").on "document:beforeSending", (req, res, doc) ->
+      if doc
+        res.set "X-Doc-Id", doc._id
+    ```
 
 3. Subscribe to event from concrete method from collection and document
   controllers:
 
-  ```coffee
-  resource("users").on "get:afterSending", (req, res, data) ->
-    console.log req.url, data
-  ```
+    ```coffee
+    resource("users").on "get:afterSending", (req, res, data) ->
+      console.log req.url, data
+    ```
 
 4. Subscribe to event from concrete controller:
 
-  ```coffee
-  resource("users").on "post:collection:afterSending", (req, res, doc) ->
-    console.log "Created new document", doc
-  ```
+    ```coffee
+    resource("users").on "post:collection:afterSending", (req, res, doc) ->
+      console.log "Created new document", doc
+    ```
