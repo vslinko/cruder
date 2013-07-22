@@ -47,8 +47,7 @@ resource User,
   collection:
     url: "/sorted-users"
     get: query: User.find().sort(username: 1)
-.disable()
-.enable("get", "collection")
+.only("get", "collection")
 
 resource Post,
   locationUrl: "/users/:user/posts/:_id"

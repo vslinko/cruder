@@ -104,6 +104,11 @@ module.exports = class Resource extends events.EventEmitter
       controller.enable()
     @
 
+  only: (methods, contexts) ->
+    @disable()
+    @enable methods, contexts
+    @
+
   _do: (methods = METHODS, contexts = CONTEXTS, action) ->
     contexts = [contexts] unless Array.isArray contexts
     methods = [methods] unless Array.isArray methods
