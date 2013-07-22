@@ -1,6 +1,6 @@
 {
   "name": "cruder"
-, "version": "1.2.1"
+, "version": "1.2.2"
 , "description": "CRUD for express and mongoose."
 , "keywords": ["crud", "express", "mongoose"]
 , "bugs": {
