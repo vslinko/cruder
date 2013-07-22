@@ -39,17 +39,17 @@ app.use express.bodyParser()
 
 
 # cruder
-resource = cruder app
-resource User, modificationTimeField: "updatedAt"
+resource = cruder app, db
+resource "users", modificationTimeField: "updatedAt"
 
-resource User,
+resource "users",
   modificationTimeField: "updatedAt"
   collection:
     url: "/sorted-users"
-    get: query: User.find().sort(username: 1)
+    get: query: -> @Model.find().sort(username: 1)
 .only("get", "collection")
 
-resource Post,
+resource "posts",
   locationUrl: "/users/:user/posts/:_id"
   modificationTimeField: "updatedAt"
   collection:
