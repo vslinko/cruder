@@ -1,30 +1,32 @@
 cruder = (app, Model, options, callback) ->
-  options.checkAuth ||= ["post", "put", "delete"]
   options.actions ||= ["list", "post", "get", "put", "delete"]
   options.modelName ||= Model.modelName
   options.query ||= Model.find()
 
-  checkAuth = (action) ->
+  checkPermission = (action) ->
     (req, res, callback) ->
-      unless options.checkAuth.indexOf(action) is -1
-        return res.send 401 unless req.user
-    
-      callback()
+      if options.hasPermission
+        user = if req.user then req.user.username else null
+        options.hasPermission user, Model.modelName, action, (accept) ->
+          callback() if accept
+          res.send 403 unless accept
+      else
+        callback()
 
   if "list" in options.actions
-    app.get "/#{options.modelName}", checkAuth("list"), cruder.list options.query, callback
+    app.get "/#{options.modelName}", checkPermission("read"), cruder.list options.query, callback
 
   if "post" in options.actions
-    app.post "/#{options.modelName}", checkAuth("post"), cruder.post Model, callback
+    app.post "/#{options.modelName}", checkPermission("create"), cruder.post Model, callback
 
   if "get" in options.actions
-    app.get "/#{options.modelName}/:id", checkAuth("get"), cruder.get Model, callback
+    app.get "/#{options.modelName}/:id", checkPermission("read"), cruder.get Model, callback
 
   if "put" in options.actions
-    app.put "/#{options.modelName}/:id", checkAuth("put"), cruder.put Model, callback
+    app.put "/#{options.modelName}/:id", checkPermission("write"), cruder.put Model, callback
 
   if "delete" in options.actions
-    app.delete "/#{options.modelName}/:id", checkAuth("delete"), cruder.delete Model, callback
+    app.delete "/#{options.modelName}/:id", checkPermission("delete"), cruder.delete Model, callback
 
 
 cruder.list = (query, callback) ->
