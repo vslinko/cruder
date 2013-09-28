@@ -31,6 +31,7 @@ cruder = (app, Model, options, callback) ->
 
 cruder.list = (query, callback) ->
   (req, res) ->
+    delete req.query.unique if req.query.unique
     query.find req.query
     query.exec (err, docs) ->
       return res.send 500 if err
