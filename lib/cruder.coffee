@@ -53,8 +53,8 @@ cruder.post = (Model, callback) ->
 cruder.get = (Model, callback) ->
   (req, res) ->
     Model.findOne _id: req.params.id, (err, doc) ->
-      return req.send 500 if err
-      return req.send 404 unless doc
+      return res.send 500 if err
+      return res.send 404 unless doc
       callback "get", doc if callback
       res.send doc
 
